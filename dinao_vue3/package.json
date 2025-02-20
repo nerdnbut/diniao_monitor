@@ -1,0 +1,35 @@
+{
+  "name": "dinao_vue3",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.7.4",
+    "echarts": "^5.5.1",
+    "element-plus": "^2.8.0",
+    "js-cookie": "^3.0.5",
+    "pinia": "^2.2.2",
+    "sweetalert2": "^11.12.4",
+    "vue": "^3.4.35",
+    "vue-router": "^4.4.3",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "devDependencies": {
+    "@iconify-json/ep": "^1.1.16",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "sass": "^1.77.8",
+    "typescript": "^5.5.3",
+    "unplugin-auto-import": "^0.18.2",
+    "unplugin-icons": "^0.19.2",
+    "unplugin-vue-components": "^0.27.4",
+    "vite": "^5.4.0",
+    "vue-tsc": "^2.0.29"
+  }
+}
