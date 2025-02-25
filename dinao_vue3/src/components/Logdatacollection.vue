@@ -34,9 +34,8 @@
           </div>
         </template>
         <!-- 使用v-if来控制服务器框架的显示 -->
-        <template #default>
+        <template #default v-if="showServers">
           <el-card
-            v-if="showServers"
             v-for="server in servers"
             :key="server.id"
             :body-style="{ padding: '0px', marginBottom: '1px' }"

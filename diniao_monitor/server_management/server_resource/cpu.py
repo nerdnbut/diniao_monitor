@@ -73,17 +73,33 @@ def run_cpu(host, user, connect_kwargs, port):
 
     # 计算每个 CPU 核心的使用率
     cpu_usage = {}
+
+    total_usage = 0  # 用于计算所有核心的平均使用率
+    core_count = 0  # 核心数目
+
+
     for cpu_key in cpu_lines_t0:
         if cpu_key in cpu_lines_t1:
             cpu_data_t0 = cpu_lines_t0[cpu_key]
             cpu_data_t1 = cpu_lines_t1[cpu_key]
             usage = calculate_cpu_usage(cpu_data_t0, cpu_data_t1)
             cpu_usage[cpu_key] = f'{usage:.2f}%'
+            
+            total_usage += usage
+            core_count += 1
         else:
             cpu_usage[cpu_key] = '数据不完整'
 
-    # 将结果转换为 JSON 格式
-    json_output = json.dumps(cpu_usage, indent=4, ensure_ascii=False)
-    # 打印 JSON 格式的输出
-    print(json_output)
-    return json_output
+    # 计算平均使用率
+    if core_count > 0:
+        average_usage = total_usage / core_count
+    else:
+        average_usage = 0.0
+
+    # # 将结果转换为 JSON 格式
+    # json_output = json.dumps(cpu_usage, indent=4, ensure_ascii=False)
+    # # 打印 JSON 格式的输出
+    # print(json_output)
+    print(f"CPU平均使用率: {average_usage:.2f}%")
+    # return json_output
+    return average_usage

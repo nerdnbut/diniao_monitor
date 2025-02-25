@@ -4,13 +4,19 @@
       
       <el-table
         :data="tableData"
-        style="width: 100%"
+        style="width: 100%;overflow: auto;"
         :default-sort="{ prop: 'timestamp', order: 'descending' }"
         v-loading="loading"
       >
         <el-table-column prop="timestamp" label="时间戳" sortable width="220" />
         <el-table-column prop="log_level" label="日志级别" width="120" />
         <el-table-column prop="message" label="消息" />
+        <el-table-column fixed="right" prop="function" label="操作">
+          <template #default>
+            <el-button type="danger" link size="small" @click="handleDelete">删除</el-button>
+            <el-button type="primary" link size="small" @click="handleDownload">下载</el-button>
+          </template>
+        </el-table-column>
       </el-table>
       
       <!-- 分页控件 -->
@@ -26,7 +32,7 @@
         </el-pagination>
       </div>
     </div>
-  </template>
+</template>
   
   <script lang="ts" setup>
   import { ref, onMounted } from 'vue';
@@ -82,6 +88,43 @@
     fetchServerLogData(page);
   };
   
+  // 删除功能
+  const handleDelete = async (logId: number) => {
+    try {
+      await axios.delete(`/log/${props.ServerID}/${logId}/`, {
+        headers: {
+          'Authorization': `Token ${localStorage.getItem('token')}`
+        }
+      });
+      // 删除成功后重新获取数据
+      fetchServerLogData(currentPage.value);
+    } catch (e) {
+      console.error(e);
+      // 可以在这里添加错误提示
+    }
+  }
+  
+  // 下载
+  const handleDownload = async (logId: number) => {
+    try {
+      const response = await axios.get(`/log/${props.ServerID}/${logId}/download/`, {
+        headers: {
+          'Authorization': `Token ${localStorage.getItem('token')}`
+        },
+        responseType: 'blob'  // 确保响应类型为blob
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `log_${logId}.txt`);  // 设置下载文件名
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (e) {
+      console.error(e);
+      // 可以在这里添加错误提示
+    }
+  }
   // 在组件挂载时获取初始数据
   onMounted(() => {
     fetchServerLogData(currentPage.value);

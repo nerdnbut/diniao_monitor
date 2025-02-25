@@ -53,6 +53,8 @@ const handleLoginClick = async () => {
       // 保存 token
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('username', response.data.username);
+      // 保存用户邮箱信息
+      localStorage.setItem('email', username.value);
       router.push('/diniao'); // 登录成功后跳转到主页
       Swal.fire({
         title: true,

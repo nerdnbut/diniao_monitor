@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from cryptography.fernet import Fernet
+from datetime import timedelta
 
 # 生成密钥代码（运行一次后复制密钥）
 # key = Fernet.generate_key()
@@ -108,7 +109,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'diniao_data',
         'USER': 'root',
-        'PASSWORD': 'root',
+        # 'PASSWORD': 'root',
+        'PASSWORD': 'zhengke@123',
         'HOST': 'localhost',  # 或者使用 '127.0.0.1'
         'PORT': '3306',  # 默认端口是 3306
     }
@@ -135,9 +137,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "zh-Hans"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Shanghai"
 
 USE_I18N = True
 
@@ -179,14 +181,17 @@ ASGI_APPLICATION = 'diniao_monitor.asgi.application'
 # Celery配置
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_BROKER_URL = 'memory://'  # 使用内存作为消息队列
-CELERY_RESULT_BACKEND = 'django-db'  # 使用 Django 数据库存储任务结果
-CELERY_TIMEZONE = 'UTC'  # 设置时区
+CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_BROKER_URL = 'memory://'  # 使用内存作为消息队列
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
+# CELERY_RESULT_BACKEND = 'django-db'  # 使用 Django 数据库存储任务结果
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
+CELERY_TIMEZONE = 'Asia/Shanghai'  # 设置时区
 
 # Celery定时任务的配置
 CELERY_BEAT_SCHEDULE = {
     'fetch_server_data_every_30_seconds': {
-        'task': 'alarm_set.time_task.fetch_server_data_and_check_alarms',  # 修改为实际路径
-        'schedule': 30.0,  # 每30秒执行一次
+        'task': 'alarm_set.tasks.fetch_server_data_and_check_alarms',  # 修改为实际路径
+        'schedule': timedelta(seconds = 30),  # 每30秒执行一次
     },
 }

@@ -34,4 +34,5 @@ class AlarmTask(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
 
     def __str__(self):
-        return f"{self.server.name} - {self.alarm_type} - {self.alarm_level}"
+        # return f"{self.server.name} - {self.alarm_type} - {self.alarm_level}"
+        return f"{self.serverId}"

@@ -45,15 +45,18 @@ class Server(models.Model):
     def set_password(self, raw_password):
         if raw_password:
             fernet = self._get_fernet()
-            self.encrypted_password = fernet.encrypt(raw_password.encode())
+            # 确保加密前后编码一致
+            self.encrypted_password = fernet.encrypt(raw_password.encode('utf-8'))
         else:
             self.encrypted_password = None
 
     def get_password(self):
         if self.encrypted_password:
             fernet = self._get_fernet()
-            return fernet.decrypt(self.encrypted_password).decode()
+            # 确保解密后编码一致
+            return fernet.decrypt(self.encrypted_password).decode('utf-8')
         return None
 
     def __str__(self):
         return self.name
+        # return f"服务器id: {self.id}"

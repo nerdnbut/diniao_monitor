@@ -6,6 +6,10 @@ from rest_framework.generics import ListAPIView
 from server_management.models import Server
 from .models import ServerLog
 from .serializers import ServerLogSerializer
+import datetime
+from dateutil import parser
+import paramiko
+
 
 
 class ServerLogPagination(PageNumberPagination):
@@ -56,8 +60,6 @@ class ServerLogView(ListAPIView):
             return Response({"error": "Server not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def get_logs_from_server(self, ip, port, username, password, offset):
-        import paramiko
-
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(hostname=ip, port=port, username=username, password=password)
@@ -119,14 +121,58 @@ class ServerLogView(ListAPIView):
             return 'UNKNOWN'
 
     def parse_timestamp(self, line):
-        # 解析日志行中的时间戳
-        import datetime
-        if 'T' in line and '+' in line:
+        try:
+            # 尝试解析 ISO 8601 格式
             timestamp_str = line.split(' ')[0]
             dt = datetime.datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%S.%f%z')
-        else:
-            timestamp_str = line[:15]
-            dt = datetime.datetime.strptime(timestamp_str, '%b %d %H:%M:%S')
-            dt = dt.replace(year=datetime.datetime.now().year)
+        except ValueError:
+            # 如果失败，尝试解析常见的日志格式
+            try:
+                timestamp_str = line[:15]
+                dt = datetime.datetime.strptime(timestamp_str, '%b %d %H:%M:%S')
+                dt = dt.replace(year=datetime.datetime.now().year)
+            except ValueError:
+                # 使用 dateutil.parser 进行更通用的解析
+                dt = parser.parse(line, fuzzy=True)
+
         formatted_timestamp = dt.strftime('%Y-%m-%d %H:%M')
         return formatted_timestamp
+
+class DeleteLogView(APIView):
+    def delete(self, request, server_id, log_id):
+        try:
+            # 获取服务器信息
+            server = Server.objects.get(id=server_id)
+            ip = server.ip_address
+            port = server.port
+            username = server.user
+            password = server.get_password()
+
+            # 使用 paramiko 连接到服务器
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(hostname=ip, port=port, username=username, password=password)
+
+            # 假设日志文件路径是已知的
+            log_file_path = f'/var/log/log_{log_id}.txt'
+
+            # 删除日志文件
+            ssh.exec_command(f'rm {log_file_path}')
+
+            ssh.close()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Server.DoesNotExist:
+            return Response({"error": "Server not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class DownloadLogView(APIView):
+    def get(self, request, server_id, log_id):
+        try:
+            log = ServerLog.objects.get(id=log_id, server_id=server_id)
+            response = HttpResponse(log.message, content_type='text/plain')
+            response['Content-Disposition'] = f'attachment; filename=log_{log_id}.txt'
+            return response
+        except ServerLog.DoesNotExist:
+            return Response({"error": "Log not found"}, status=status.HTTP_404_NOT_FOUND)
