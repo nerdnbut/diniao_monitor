@@ -7,4 +7,5 @@ urlpatterns = [
     path('api/', include('server_management.urls')),  # 引入server_management应用的路由
     path('api/', include('log_management.urls')),
     path('api/', include('alarm_set.urls')),
+    path('api/', include('file_management.urls')),  # 添加文件管理的路由
 ]

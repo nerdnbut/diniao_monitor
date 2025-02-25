@@ -63,7 +63,7 @@ INSTALLED_APPS = [
     "alarm_set",
     'django_celery_beat',
     'django_celery_results',
-
+    'file_management',
 ]
 
 MIDDLEWARE = [

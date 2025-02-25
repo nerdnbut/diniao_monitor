@@ -9,6 +9,7 @@ from .serializers import ServerLogSerializer
 import datetime
 from dateutil import parser
 import paramiko
+from django.http import HttpResponse
 
 
 
@@ -141,31 +142,48 @@ class ServerLogView(ListAPIView):
 class DeleteLogView(APIView):
     def delete(self, request, server_id, log_id):
         try:
-            # 获取服务器信息
-            server = Server.objects.get(id=server_id)
-            ip = server.ip_address
-            port = server.port
-            username = server.user
-            password = server.get_password()
-
-            # 使用 paramiko 连接到服务器
+            # 先获取数据库中的日志记录
+            log_entry = ServerLog.objects.get(id=log_id, server_id=server_id)
+            server = log_entry.server
+            
+            # 从日志内容中提取文件路径（假设日志内容包含文件路径信息）
+            log_message = log_entry.message
+            log_timestamp = log_entry.timestamp
+            
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(hostname=ip, port=port, username=username, password=password)
-
-            # 假设日志文件路径是已知的
-            log_file_path = f'/var/log/log_{log_id}.txt'
-
-            # 删除日志文件
-            ssh.exec_command(f'rm {log_file_path}')
-
-            ssh.close()
-
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Server.DoesNotExist:
-            return Response({"error": "Server not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            try:
+                ssh.connect(
+                    hostname=server.ip_address,
+                    port=server.port,
+                    username=server.user,
+                    password=server.get_password()
+                )
+                
+                # 根据时间戳定位并删除日志行
+                # 使用sed命令删除匹配的行
+                cmd = f"sed -i '/{log_timestamp}/d' /var/log/syslog /var/log/messages 2>/dev/null || true"
+                ssh.exec_command(cmd)
+                
+                # 删除数据库记录
+                log_entry.delete()
+                
+                return Response(status=status.HTTP_204_NO_CONTENT)
+                
+            finally:
+                ssh.close()
+                
+        except ServerLog.DoesNotExist:
+            return Response(
+                {"error": "日志记录不存在"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": f"删除失败: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class DownloadLogView(APIView):
     def get(self, request, server_id, log_id):

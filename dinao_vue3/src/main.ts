@@ -3,6 +3,7 @@ import App from './App.vue';
 import router from './router';
 import axios from 'axios';
 import { createPinia } from 'pinia';
+import 'element-plus/dist/index.css'
 
 // 设置axios的请求基础路径
 axios.defaults.baseURL = 'http://127.0.0.1:8000/api/';

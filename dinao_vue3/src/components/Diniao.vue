@@ -1,211 +1,244 @@
 <template>
-    <div class="common-layout">
-      <el-container>
-        <!-- 顶部导航栏 -->
-        <el-header class="header">
-            <el-page-header title="Diniao" icon="none">
-                <template #content>
-                <el-avatar :size="50" class="mr-3" src="../../public/images/logo.png" @click="userinfoClick" />
-                    <span class="text-large font-600 mr-3">{{ top_name }}</span>
-                </template>
-            </el-page-header>
-        </el-header>
-        <el-container>
-            <!-- 侧边栏 -->
-        <div class="content">
-          <el-aside width="100%" class="sidbar">
-            <el-row>
-                <el-col :span="30">
-                  <el-menu 
-                    active-text-color="#ffd04b"
-                    background-color="#01344f"
-                    text-color="#fff"
-                    :default-active="selectedIndex" 
-                    class="el-menu-vertical-demo" 
-                    @open="handleOpen" 
-                    @close="handleClose">
-                    <el-sub-menu index="1" :popper-append-to-body="false">
-                      <template #title>
-                        <el-icon><PieChart /></el-icon>
-                        <span>服务器</span>
-                      </template>
-                      <el-menu-item
-                        v-for="(server, index) in servers"
-                        :key="server.id"
-                        @click="handleMenuItemClick(server.id)"
-                        :index="`1-${index + 1}`"
-                      >
-                        {{ server.name }}
-                      </el-menu-item>
-                    </el-sub-menu>
-                    <el-sub-menu index="2" :popper-append-to-body="false">
-                      <template #title>
-                        <el-icon><Desktop /></el-icon>
-                        <span>报警管理</span>
-                      </template>
-                      <el-menu-item index="2-1">
-                        <el-icon><icon-menu /></el-icon>
-                        <span @click="alarmtaskClick">报警设置</span>
-                      </el-menu-item>
-                      <el-menu-item index="2-2">
-                        <el-icon><icon-menu /></el-icon>
-                        <span @click="alarmsetClick">报警记录</span>
-                      </el-menu-item>
-                    </el-sub-menu>
-                    <el-menu-item index="2">
-                      <el-icon><icon-menu /></el-icon>
-                      <span @click="serverterminalClick">终端</span>
-                    </el-menu-item>
-                    <el-menu-item index="4">
-                      <el-icon><Document /></el-icon>
-                      <span @click="serverlogclick">日志</span>
-                    </el-menu-item>
-                    <el-menu-item index="5">
-                      <!-- <el-icon><setting /></el-icon> -->
-                      <!-- <span>设置</span> -->
-                    </el-menu-item>
-                  </el-menu>
-                </el-col>
-                </el-row>
-          </el-aside>
-        </div>
-          <!-- 主体内容 -->
-          <el-main class="main">
-            <div>
-              <!-- 用户信息组件 -->
-              <Userinfo v-if="userinfo" :servers="servers" />
-              <!-- 动态渲染服务器监控组件 -->
-              <ServerMonitoring v-if="selectedServerId" :serverId="selectedServerId" />
-              <!-- 终端组件 -->
-              <ServerTerminal v-if="serverterminal" :servers="servers" />
-              <!-- 日志组件 -->
-              <Logdatacollection v-if="serverlogdata" :servers="servers" />
-              <!-- 报警设置组件 -->
-              <Alarm_set_from v-if="alarmsetfrom" :servers="servers" />
-              <!-- 报警任务组件 -->
-               <AlarmTask v-if="alarmtask" :servers="servers" />
-            </div>
-          </el-main>
-        </el-container>
-      </el-container>
-    </div>
-  </template>
-  
-  <!-- 方法 -->
-    <script lang="ts" setup>
-    import {
-      Document,
-        Menu as IconMenu,
-        PieChart,
-        Setting,
-    } from '@element-plus/icons-vue';
-    import { ref, onMounted } from 'vue';
-    import ServerMonitoring from './ServerMonitoring.vue'
-    import ServerTerminal from './ServerTerminal.vue';
-    import Logdatacollection from './Logdatacollection.vue';
-    import Alarm_set_from from './Alarm_set_from.vue';
-    import AlarmTask from './AlarmTask.vue';
-    import Userinfo from './userinfo.vue';
-    import axios from 'axios';
-    axios.defaults.withCredentials = true
+  <el-container class="app-container">
+    <!-- 顶部导航栏简化 -->
+    <el-header class="header">
+      <div class="header-content">
+        <h1 class="logo">Diniao</h1>
+        <el-avatar :size="40" src="../../public/images/logo.png" @click="userinfoClick" />
+      </div>
+    </el-header>
 
-    // 顶部导航栏
-    const top_name = ref<string | null>(null);
-    onMounted(() => {
-      // 从localStorage中获取用户名
-      top_name.value = localStorage.getItem('username');
-    })
-    
-    // 侧边栏方法
-    const handleOpen = (key: string, keyPath: string[]) => {
-        console.log(key, keyPath)
-    }
-    const handleClose = (key: string, keyPath: string[]) => {
-        console.log(key, keyPath)
-    }
-    // 获取当前用户的所有服务器信息
-    import { useServerStore } from '../stores/serverdata';
-    import { computed } from 'vue'
-    const serverStore = useServerStore()
-    // 获取服务器数据
-    onMounted( async () => {
-      await serverStore.fetchServers();
-            // 控制台输出servers中的第一条数据
-      // console.log(servers.value[0])?.id;
-      await handleMenuItemClick(servers.value[0]?.id);
-    });
-    const servers = computed(() => serverStore.servers);
-    const userinfo = ref<boolean>(false);
-    const selectedIndex = ref<string>("1-1");
-    const selectedServerId = ref<number | null>(null);
-    const serverterminal = ref<boolean>(false);
-    const serverlogdata = ref<boolean>(false);
-    const alarmsetfrom = ref<boolean>(false);
-    const alarmtask = ref<boolean>(false);
-    const userinfoClick = () =>{
-      serverterminal.value = false;
-      selectedServerId.value = null;
-      serverlogdata.value = false;
-      alarmsetfrom.value = false;
-      alarmtask.value = false;
-      userinfo.value = true;
-    }
-    const handleMenuItemClick = (id: number) => {
-      selectedIndex.value = '1-${id}';
-      selectedServerId.value = id;
-      serverterminal.value = false;
-      serverlogdata.value = false;
-      alarmsetfrom.value = false;
-      alarmtask.value = false;
-      userinfo.value = false;
-    };
-    const serverterminalClick = () =>{
-      serverterminal.value = true;
-      selectedServerId.value = null;
-      serverlogdata.value = false;
-      alarmsetfrom.value = false;
-      alarmtask.value = false;
-      userinfo.value = false;
-    }
-    const serverlogclick = () => {
-      serverlogdata.value = true;
-      selectedServerId.value = null;
-      serverterminal.value = false;
-      alarmsetfrom.value = false;
-      alarmtask.value = false;
-      userinfo.value = false;
-    }
-    const alarmtaskClick = () => {
-      selectedIndex.value = "2-1";
-      alarmtask.value = true;
-      selectedServerId.value = null;
-      serverterminal.value = false;
-      serverlogdata.value = false;
-      alarmsetfrom.value = false;
-      userinfo.value = false;
-    }
-    const alarmsetClick = () => {
-      selectedIndex.value = "2-2";
-      alarmsetfrom.value = true;
-      selectedServerId.value = null;
-      serverterminal.value = false;
-      serverlogdata.value = false;
-      alarmtask.value = false;
-      userinfo.value = false;
-    }
-    // 主体内容
+    <el-container class="main-container">
+      <!-- 侧边栏优化 -->
+      <el-aside width="220px" class="sidebar">
+        <el-menu
+          :default-active="activeMenu"
+          class="sidebar-menu"
+          @select="handleMenuSelect"
+          :collapse="isCollapse">
+          <el-sub-menu index="servers">
+            <template #title>
+              <el-icon><Monitor /></el-icon>
+              <span>服务器</span>
+            </template>
+            <el-menu-item
+              v-for="server in servers"
+              :key="server.id"
+              :index="`server-${server.id}`"
+            >
+              {{ server.name }}
+            </el-menu-item>
+          </el-sub-menu>
 
-    </script>
+          <el-sub-menu index="alarms">
+            <template #title>
+              <el-icon><Bell /></el-icon>
+              <span>报警管理</span>
+            </template>
+            <el-menu-item index="alarm-settings">报警设置</el-menu-item>
+            <el-menu-item index="alarm-records">报警记录</el-menu-item>
+          </el-sub-menu>
 
-  <!-- 样式 -->
-   <style>
-    /* 主体布局 */
-    .header {
-        background-color: #d12128;
-    }
+          <el-menu-item index="terminal">
+            <el-icon><Notebook /></el-icon>
+            <template #title>终端</template>
+          </el-menu-item>
 
-    .content {
-        height: 100vh;
-        background-color: #01344f;
+          <el-menu-item index="logs">
+            <el-icon><Document /></el-icon>
+            <template #title>日志</template>
+          </el-menu-item>
+
+          <el-menu-item index="files">
+            <el-icon><Files /></el-icon>
+            <template #title>文件管理</template>
+          </el-menu-item>
+
+          <el-menu-item index="scripts">
+            <el-icon><DocumentAdd /></el-icon>
+            <template #title>任务管理</template>
+          </el-menu-item>
+        </el-menu>
+      </el-aside>
+
+      <!-- 主内容区优化 -->
+      <el-main class="main-content">
+        <component 
+          :is="currentComponent" 
+          :servers="servers"
+          :serverId="selectedServerId"
+        />
+      </el-main>
+    </el-container>
+  </el-container>
+</template>
+
+<script lang="ts" setup>
+import {
+  Document,
+  Monitor,
+  Bell,
+  Notebook,
+  Files,
+  DocumentAdd
+} from '@element-plus/icons-vue';
+import { ref, onMounted } from 'vue';
+import ServerMonitoring from './ServerMonitoring.vue'
+import ServerTerminal from './ServerTerminal.vue';
+import Logdatacollection from './Logdatacollection.vue';
+import Alarm_set_from from './Alarm_set_from.vue';
+import AlarmTask from './AlarmTask.vue';
+import Userinfo from './userinfo.vue';
+import fileSystem from './file-system.vue';
+import taskManagement from './task-management.vue';
+import axios from 'axios';
+axios.defaults.withCredentials = true
+
+// 顶部导航栏
+const top_name = ref<string | null>(null);
+onMounted(() => {
+  // 从localStorage中获取用户名
+  top_name.value = localStorage.getItem('username');
+})
+
+// 状态管理
+const activeMenu = ref('dashboard')
+const isCollapse = ref(false)
+const currentComponent = ref<any>('ServerMonitoring')
+const selectedServerId = ref<number | null>(null)
+
+// 获取当前用户的所有服务器信息
+import { useServerStore } from '../stores/serverdata';
+import { computed } from 'vue'
+const serverStore = useServerStore()
+// 获取服务器数据
+onMounted( async () => {
+  await serverStore.fetchServers();
+        // 控制台输出servers中的第一条数据
+  // console.log(servers.value[0])?.id;
+  await handleMenuSelect(`server-${servers.value[0]?.id}`);
+});
+const servers = computed(() => serverStore.servers);
+const userinfo = ref<boolean>(false);
+
+// 菜单处理函数
+const handleMenuSelect = (index: string) => {
+  if (index.startsWith('server-')) {
+    const serverId = parseInt(index.split('-')[1])
+    selectedServerId.value = serverId
+    currentComponent.value = ServerMonitoring
+  } else {
+    const componentMap: Record<string, any> = {
+      'terminal': ServerTerminal,
+      'logs': Logdatacollection,
+      'alarm-settings': AlarmTask,
+      'alarm-records': Alarm_set_from,
+      'dashboard': Userinfo,
+      'files': fileSystem,
+      'scripts': taskManagement
     }
-   </style>
+    currentComponent.value = componentMap[index] || ServerMonitoring
+    selectedServerId.value = null
+  }
+}
+
+const userinfoClick = () => {
+  currentComponent.value = Userinfo
+}
+</script>
+
+<style scoped>
+.app-container {
+  height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.header {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
+}
+
+.header-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.logo {
+  color: #409eff;
+  margin: 0;
+  font-size: 24px;
+}
+
+.main-container {
+  height: calc(100vh - 60px);
+}
+
+.sidebar {
+  background-color: #ffffff;
+  transition: all 0.3s;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  border-right: none;
+}
+
+.sidebar-menu {
+  border-right: none;
+}
+
+.main-content {
+  background-color: #ffffff;
+  border-radius: 8px;
+  margin: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 菜单样式重写 */
+:deep(.el-menu) {
+  background-color: transparent;
+}
+
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
+  color: #606266;
+  height: 50px;
+  line-height: 50px;
+}
+
+:deep(.el-menu-item.is-active) {
+  background-color: #ecf5ff;
+  color: #409eff;
+  border-right: 3px solid #409eff;
+}
+
+:deep(.el-menu-item:hover),
+:deep(.el-sub-menu__title:hover) {
+  background-color: #f5f7fa;
+  color: #409eff;
+}
+
+:deep(.el-menu-item .el-icon),
+:deep(.el-sub-menu__title .el-icon) {
+  color: #909399;
+}
+
+:deep(.el-menu-item.is-active .el-icon) {
+  color: #409eff;
+}
+
+/* 图标样式 */
+:deep(.el-icon) {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+/* 添加平滑过渡效果 */
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title),
+:deep(.el-icon) {
+  transition: all 0.3s ease;
+}
+</style>

@@ -1,103 +1,106 @@
 <template>
-    <el-space style="width: 90%" fill>
-      <div>
-        <el-row>
-          <el-button @click="setLoading">Click me to reload</el-button>
-        </el-row>
-      </div>
+  <el-container>
+    <el-main>
       <Loginformationdisplay v-if="serverlogdisplay" :ServerID="serverlogdisplay" />
-
-      <el-skeleton
-        style="display: flex; gap: 8px"
-        :loading="loading"
-        animated
-        :count="servers.length"
-      >
-        <template #template>
-          <div style="flex: 1">
-            <el-skeleton-item variant="image" style="height: 240px" />
-            <div style="padding: 14px">
-              <el-skeleton-item variant="h3" style="width: 50%" />
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-items: space-between;
-                  margin-top: 16px;
-                  height: 16px;
-                "
-              >
-                <el-skeleton-item variant="text" style="margin-right: 16px" />
-                <el-skeleton-item variant="text" style="width: 30%" />
-              </div>
-            </div>
-          </div>
-        </template>
-        <!-- 使用v-if来控制服务器框架的显示 -->
+      <el-skeleton :loading="loading" animated :count="servers.length">
         <template #default v-if="showServers">
-          <el-card
-            v-for="server in servers"
-            :key="server.id"
-            :body-style="{ padding: '0px', marginBottom: '1px' }"
-          >
-            <img
-              src="https://fuss10.elemecdn.com/0/6f/e35ff375812e6b0020b6b4e8f9583jpeg.jpeg"
-              class="image multi-content"
-              style="max-width: 60%"
-            />
-            <div style="padding: 14px">
-              <span>{{ server.name }}</span>
-              <div class="bottom card-header">
-                <div class="time">{{ server.operating_system }}</div>
-                <!-- 点击按钮后隐藏所有框架 -->
-                <el-button text class="button" @click="hideServers(server.id)">查看日志</el-button>
-              </div>
-            </div>
-          </el-card>
+          <el-row :gutter="20">
+            <el-col :span="6" v-for="server in servers" :key="server.id">
+              <el-card :body-style="{ padding: '0px', marginBottom: '10px' }">
+                <img src="https://fuss10.elemecdn.com/0/6f/e35ff375812e6b0020b6b4e8f9583jpeg.jpeg" class="image" />
+                <div style="padding: 8px">
+                  <div class="info-item">
+                    <label>名称：</label>
+                    <span>{{ server.name }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>IP地址：</label>
+                    <span>{{ server.ip_address }}</span>
+                  </div>
+                  <div class="info-item">
+                    <label>操作系统：</label>
+                    <span>{{ server.operating_system }}</span>
+                  </div>
+                  <div class="info-item" style="margin-top: 5px">
+                    <el-button type="primary" size="small" @click="hideServers(server.id)">查看日志</el-button>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
         </template>
       </el-skeleton>
-    </el-space>
-  </template>
-  
-  <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
-  import { defineProps } from 'vue';
-  import Loginformationdisplay from './Loginformationdisplay.vue'
-  
-  interface Server {
-    id: number,
-    name: string,
-    operating_system: string,
-  }
+    </el-main>
+  </el-container>
+</template>
 
-  const props = defineProps<{
-    servers: Server[]
-  }>();
-  
-  const loading = ref(true);
-  const showServers = ref(true); // 控制服务器框架显示的状态
-  const serverlogdisplay = ref<number | null>(null);
-  
-  // 模拟加载效果
-  const setLoading = () => {
+<script lang="ts" setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import { ElMessage } from 'element-plus';
+import Loginformationdisplay from './Loginformationdisplay.vue';
+
+interface Server {
+  id: number,
+  name: string,
+  operating_system: string,
+  ip_address: string
+}
+
+const servers = ref<Server[]>([]);
+const loading = ref(true);
+const showServers = ref(true);
+const serverlogdisplay = ref<number | null>(null);
+
+const fetchServers = async () => {
+  try {
     loading.value = true;
-    setTimeout(() => {
-      loading.value = false;
-    }, 2000);
-    showServers.value = false;
-  };
-  
-  // 点击查看日志按钮后隐藏所有服务器框架
-  const hideServers = (id: number) => {
-    showServers.value = false;
-    serverlogdisplay.value = id; // 显示日志窗口
-  };
-  
-  onMounted(() => {
+    const response = await axios.get('/servers/', {
+      headers: {
+        'Authorization': `Token ${localStorage.getItem('token')}`
+      }
+    });
+    servers.value = response.data.results;
+  } catch (error) {
+    console.error('获取服务器列表失败:', error);
+    ElMessage.error('获取服务器列表失败');
+  } finally {
     loading.value = false;
-  });
-  </script>
-  
-  <style scoped>
-  </style>
+  }
+};
+
+const setLoading = () => {
+  fetchServers();
+};
+
+const hideServers = (id: number) => {
+  showServers.value = false;
+  serverlogdisplay.value = id;
+};
+
+onMounted(() => {
+  fetchServers();
+});
+</script>
+
+<style scoped>
+.image {
+  width: 100%;
+  height: 120px; /* 固定图片高度 */
+  object-fit: cover; /* 保持图片比例 */
+}
+
+.info-item {
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  font-size: 13px; /* 减小字体大小 */
+}
+
+.info-item label {
+  font-weight: bold;
+  margin-right: 4px;
+  width: 60px;
+}
+</style>
   
