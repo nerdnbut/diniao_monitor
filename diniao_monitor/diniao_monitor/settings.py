@@ -111,7 +111,6 @@ DATABASES = {
         'NAME': 'diniao_data',
         'USER': 'root',
         # 'PASSWORD': 'root',
-        'PASSWORD': 'zhengke@123',
         'HOST': 'localhost',  # 或者使用 '127.0.0.1'
         'PORT': '3306',  # 默认端口是 3306
     }
@@ -140,7 +139,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "zh-Hans"
 
-TIME_ZONE = "Asia/Shanghai"
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
