@@ -25,7 +25,18 @@ class ServerLogView(ListAPIView):
 
     def get_queryset(self):
         server_id = self.kwargs['server_id']
-        return ServerLog.objects.filter(server_id=server_id).order_by('-timestamp')
+        queryset = ServerLog.objects.filter(server_id=server_id).order_by('-timestamp')
+
+        # 获取时间筛选参数
+        start_time = self.request.query_params.get('start_time')
+        end_time = self.request.query_params.get('end_time')
+
+        if start_time:
+            queryset = queryset.filter(timestamp__gte=start_time)
+        if end_time:
+            queryset = queryset.filter(timestamp__lte=end_time)
+
+        return queryset
 
     def list(self, request, *args, **kwargs):
         server_id = kwargs.get('server_id')

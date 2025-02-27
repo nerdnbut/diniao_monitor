@@ -17,7 +17,7 @@ def get_server_credentials(task):
 def send_email(subject, message, recipient_email):
     """发送电子邮件通知"""
     sender_email = formataddr(["Diniao", 'nerdnbut@qq.com'])  # 填写你的发送邮箱
-    sender_password = "zxfbfcflmxyzhjdj"  # 填写你的邮箱密码
+    sender_password = ""  # 填写你的邮箱密码
     smtp_server = "smtp.qq.com"  # 填写SMTP服务器地址
 
     msg = MIMEMultipart()

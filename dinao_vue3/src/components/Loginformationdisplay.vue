@@ -4,6 +4,18 @@
       <h1>服务器日志</h1>
     </el-header>
     <el-main>
+      <el-form :inline="true" :model="filter" class="filter-form">
+        <el-form-item label="开始时间">
+          <el-date-picker v-model="filter.startTime" type="datetime" placeholder="选择开始时间" />
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker v-model="filter.endTime" type="datetime" placeholder="选择结束时间" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="fetchServerLogData(currentPage)">筛选</el-button>
+        </el-form-item>
+      </el-form>
+
       <el-table :data="tableData" style="width: 100%;" :default-sort="{ prop: 'timestamp', order: 'descending' }" v-loading="loading">
         <el-table-column prop="timestamp" label="时间戳" sortable width="220" />
         <el-table-column prop="log_level" label="日志级别" width="120" />
@@ -34,6 +46,10 @@ const currentPage = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
 const loading = ref(false);
+const filter = ref({
+  startTime: null,
+  endTime: null,
+});
 
 const fetchServerLogData = async (page: number) => {
   if (page < 1) return;
@@ -47,7 +63,9 @@ const fetchServerLogData = async (page: number) => {
       },
       params: {
         page: page,
-        page_size: pageSize.value
+        page_size: pageSize.value,
+        start_time: filter.value.startTime ? filter.value.startTime.toISOString() : null,
+        end_time: filter.value.endTime ? filter.value.endTime.toISOString() : null,
       }
     });
 
@@ -59,8 +77,9 @@ const fetchServerLogData = async (page: number) => {
     }));
     currentPage.value = page;
     total.value = response.data.count;
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    loading.value = false;
+    ElMessage.error('无法加载日志数据:', error);
   } finally {
     loading.value = false;
   }
@@ -84,7 +103,7 @@ const handleDelete = async (logId: number) => {
         'Authorization': `Token ${localStorage.getItem('token')}`
       }
     });
-    ElMessage.success(`从服务器删除log:${logId} 成功`)
+    ElMessage.success(`从服务器删除log:${logId} 成功`);
     await fetchServerLogData(currentPage.value);
   } catch (e) {
     if (e !== 'cancel') {

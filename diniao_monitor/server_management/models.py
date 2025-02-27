@@ -4,8 +4,6 @@ from django.db import models
 from django.conf import settings
 from cryptography.fernet import Fernet
 
-# 初始化 Fernet 加密器, 用于加密服务器密码
-# fernet = Fernet(settings.ENCRYPTION_KEY)
 
 
 class Server(models.Model):

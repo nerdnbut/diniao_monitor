@@ -8,4 +8,5 @@ urlpatterns = [
     path('api/', include('log_management.urls')),
     path('api/', include('alarm_set.urls')),
     path('api/', include('file_management.urls')),  # 添加文件管理的路由
+    path('api/', include('task_management.urls')),  # 添加任务管理的路由
 ]

@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'file_management',
+    'task_management',
 ]
 
 MIDDLEWARE = [
@@ -186,7 +187,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
 # CELERY_RESULT_BACKEND = 'django-db'  # 使用 Django 数据库存储任务结果
 CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
-CELERY_TIMEZONE = 'Asia/Shanghai'  # 设置时区
+CELERY_TIMEZONE = 'UTC'  # 设置时区
 
 # Celery定时任务的配置
 CELERY_BEAT_SCHEDULE = {
