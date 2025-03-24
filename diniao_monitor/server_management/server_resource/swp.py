@@ -5,51 +5,51 @@ from fabric import Connection
 from fabric import task
 
 
-def parse_swapinfo(content):
-    """解析 /proc/meminfo 文件中的交换空间信息"""
-    swap_info = {'totalSwap': 0, 'usedSwap': 0}
+def parse_df_output(content):
+    """解析 df 命令输出"""
+    disk_info = {'total': 0, 'used': 0}
     lines = content.splitlines()
-    for line in lines:
-        if line.startswith("SwapTotal:"):
-            swap_info['totalSwap'] = int(re.search(r'\d+', line).group())
-        elif line.startswith("SwapFree:"):
-            swap_info['freeSwap'] = int(re.search(r'\d+', line).group())
+    for line in lines[1:]:  # 跳过标题行
+        fields = line.split()
+        if len(fields) >= 5:
+            # 将大小转换为KB
+            total = int(fields[1]) * 1024
+            used = int(fields[2]) * 1024
+            disk_info['total'] += total
+            disk_info['used'] += used
+    return disk_info
 
-    swap_info['usedSwap'] = swap_info['totalSwap'] - swap_info.get('freeSwap', 0)
-    return swap_info
 
-
-def swap_usage(swap_info):
-    """计算交换空间使用率"""
-    total_swap = swap_info['totalSwap']
-    used_swap = swap_info['usedSwap']
-    usage_rate = (used_swap / total_swap) * 100.0 if total_swap > 0 else 0
+def disk_usage(disk_info):
+    """计算磁盘使用率"""
+    total = disk_info['total']
+    used = disk_info['used']
+    usage_rate = (used / total) * 100.0 if total > 0 else 0
     return usage_rate
 
 
 @task
-def fetch_meminfo(c):
-    """从远程主机获取 /proc/meminfo 文件内容"""
-    result = c.run('cat /proc/meminfo', hide=True)
+def fetch_df(c):
+    """从远程主机获取 df 命令输出"""
+    result = c.run('df -k', hide=True)
     return result.stdout
 
 
 def run_swp(host, user, connect_kwargs, port):
-
     # 连接到远程主机
     conn = Connection(host=host, user=user, port=port, connect_kwargs={"password": connect_kwargs})
 
-    # 获取远程主机的内存信息
-    meminfo_content = fetch_meminfo(conn)
+    # 获取远程主机的磁盘信息
+    df_content = fetch_df(conn)
 
-    # 解析交换空间信息
-    swap_info = parse_swapinfo(meminfo_content)
+    # 解析磁盘信息
+    disk_info = parse_df_output(df_content)
 
-    # 计算交换空间使用率
-    usage_rate = swap_usage(swap_info)
+    # 计算磁盘使用率
+    usage_rate = disk_usage(disk_info)
 
-    # 输出交换空间使用率
-    print(f"Swap Usage: {usage_rate:.2f}%")
+    # 输出磁盘使用率
+    print(f"Disk Usage: {usage_rate:.2f}%")
     return usage_rate
 
 

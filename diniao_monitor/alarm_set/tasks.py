@@ -71,11 +71,15 @@ def fetch_server_data_and_check_alarms():
 
             # 获取资源使用情况
             cpu_usage = cpu.run_cpu(ip, user, password, port)
-            # mem_usage = mem.run_mem(ip, user, password, port)
-            mem_usage = 900
+            mem_usage = mem.run_mem(ip, user, password, port)
             swp_usage = swp.run_swp(ip, user, password, port)
-            # network_usage = Network.run_network(ip, user, password, port)
-            network_usage = 200
+            network_usage = Network.run_network(ip, user, password, port)
+
+            # 计算网络带宽使用率
+            total_network_usage = 0
+            for iface, rate in network_usage.items():
+                total_network_usage += rate['rx_rate'] + rate['tx_rate']
+            network_usage_percentage = min((total_network_usage / (1024 * 1024)) * 100, 100)  # 转换为MB/s并限制最大值为100%
 
             if task.alarmType == 'cpu':
                 handle_alarm(task, cpu_usage, task.threshold, 'cpu', f'CPU使用率超过{task.threshold}%')
@@ -84,7 +88,7 @@ def fetch_server_data_and_check_alarms():
             elif task.alarmType == 'disk':
                 handle_alarm(task, swp_usage, task.threshold, 'disk', f'磁盘使用率超过{task.threshold}%')
             elif task.alarmType == 'network':
-                handle_alarm(task, network_usage, task.threshold, 'network', f'网络带宽使用率超过{task.threshold}%')
+                handle_alarm(task, network_usage_percentage, task.threshold, 'network', f'网络带宽使用率超过{task.threshold}%')
         
         except Exception as e:
             print(f"无法登录到服务器 {task.serverId.name}: {e}")

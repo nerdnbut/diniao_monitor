@@ -1,5 +1,21 @@
 <template>
   <div>
+    <!-- 添加刷新控制区域 -->
+    <div class="refresh-control">
+      <el-switch
+        v-model="autoRefresh"
+        active-text="自动刷新"
+        inactive-text="手动刷新"
+      />
+      <el-select v-if="autoRefresh" v-model="refreshInterval" class="refresh-interval">
+        <el-option label="30秒" :value="30" />
+        <el-option label="1分钟" :value="60" />
+        <el-option label="2分钟" :value="120" />
+        <el-option label="5分钟" :value="300" />
+      </el-select>
+      <el-button v-if="!autoRefresh" type="primary" @click="fetchAlarms">刷新</el-button>
+    </div>
+
     <!-- 表格展示报警任务 -->
     <el-table :data="alarms" style="width: 100%" max-height="250">
       <el-table-column prop="name" label="服务器" width="150" />
@@ -22,18 +38,22 @@
 
 <script lang="ts" setup>
 import AlarmForm from './AlarmForm.vue'; // 引入 AlarmForm 组件
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import axios from 'axios';
-import { ElTable, ElTableColumn, ElButton } from 'element-plus';
+import { ElTable, ElTableColumn, ElButton, ElSwitch, ElSelect, ElOption } from 'element-plus';
 import Swal from 'sweetalert2'; // 弹窗库
 // import { useFormStore } from '../stores/alarmTask_form' // Pinia Store
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 
 const alarms = ref([]);  // 存放报警任务的数据
+const autoRefresh = ref(false);
+const refreshInterval = ref(60);
+let refreshTimer: number | null = null;
 
 // 获取报警任务数据
 const fetchAlarms = async () => {
+  console.log('刷新')
   try {
     const response = await axios.get('/alarms/', {
       headers: {
@@ -46,6 +66,43 @@ const fetchAlarms = async () => {
     console.error("Error fetching alarms:", error);
   }
 };
+
+// 设置定时刷新
+const setupAutoRefresh = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+  }
+  if (autoRefresh.value) {
+    refreshTimer = window.setInterval(() => {
+      fetchAlarms();
+    }, refreshInterval.value * 1000);
+  }
+};
+
+// 监听自动刷新开关变化
+watch(autoRefresh, (newVal) => {
+  if (newVal) {
+    setupAutoRefresh();
+  } else if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+});
+
+// 监听刷新间隔变化
+watch(refreshInterval, () => {
+  if (autoRefresh.value) {
+    setupAutoRefresh();
+  }
+});
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+});
 
 // 删除报警任务
 const deleteAlarm = async (id: number) => {
@@ -127,5 +184,16 @@ onMounted(fetchAlarms);
 <style scoped>
 .dialog-footer {
   text-align: right;
+}
+
+.refresh-control {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.refresh-interval {
+  width: 120px;
 }
 </style>
